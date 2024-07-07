@@ -1,14 +1,18 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import Image from "next/image";
 
+import { sleep } from "@/utils/utils";
+
 interface CardProps {
-  cards: Cards[];
   card: Cards;
   selectedCards: CurrCard[] | Cards[];
   setSelectedCards: React.Dispatch<React.SetStateAction<Cards[]>>;
-  setCards: React.Dispatch<React.SetStateAction<Cards[]>>;
+  turn: number;
+  setTurn: React.Dispatch<React.SetStateAction<number>>;
+  flip: (idOne: string | number, idTwo?: string | number) => void;
+  markDoneAndFlip: (idOne: string | number, idTwo: string | number) => void;
 }
 
 interface CurrCard extends Cards {
@@ -19,79 +23,47 @@ const Card: React.FC<CardProps> = ({
   card,
   setSelectedCards,
   selectedCards,
-  cards,
-  setCards,
+  flip,
+  markDoneAndFlip,
+  turn,
+  setTurn,
 }) => {
-  const handleClick = () => {
+  const handleClick = async () => {
     const updateCard = { ...card, isFlipped: !card.isFlipped };
-
-    setCards((prevCards) =>
-      prevCards.map((c) => {
-        if (c.id === card.id) {
-          return {
-            ...c,
-            isFlipped: !c.isFlipped,
-          };
-        }
-
-        return c;
-      })
-    );
-
+  
+    flip(card.id);
+  
     if (selectedCards.length === 1) {
       if (selectedCards[0].name === updateCard.name) {
-        setTimeout(
-          () =>
-            setCards((prevCards) =>
-              prevCards.map((c) => {
-                if (c.id === card.id || c.id === selectedCards[0].id) {
-                  return {
-                    ...c,
-                    isFlipped: false,
-                    isDone: true,
-                  };
-                }
-
-                return c;
-              })
-            ),
-          1000
-        );
-
-        return setSelectedCards((prevCards) => []);
+        await sleep(700);
+        markDoneAndFlip(card.id, selectedCards[0].id);
+        
+        await sleep(200);
+        setTurn(1);
+  
+        return setSelectedCards([]);
+      } else {
+        await sleep(700);
+        flip(card.id, selectedCards[0].id);
+  
+        await sleep(200);
+        setTurn(1);
+  
+        return setSelectedCards([]);
       }
-
-      setTimeout(
-        () =>
-          setCards((prevCards) =>
-            prevCards.map((c) => {
-              if (c.id === card.id || c.id === selectedCards[0].id) {
-                return {
-                  ...c,
-                  isFlipped: false,
-                };
-              }
-
-              return c;
-            })
-          ),
-        1000
-      );
-
-      return setSelectedCards((prevCards) => []);
     }
-
+  
     setSelectedCards((prevCards) => [updateCard, ...prevCards]);
   };
 
   return (
     <>
       {card.isDone ? (
-        <div></div>
+        <div className="card"></div>
       ) : (
         <div
           className={`card-container ${card.isFlipped ? "flipped" : ""}`}
-          onClick={() => !card.isFlipped && handleClick()}
+          onClick={() => !card.isFlipped && turn === 0 && handleClick()}
         >
           <div className="card">
             <div className="card-front"></div>
